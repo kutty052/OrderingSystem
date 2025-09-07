@@ -1,0 +1,85 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Customers";
+}
+
+<h2>Customers</h2>
+
+<div class="input-group mb-3">
+    <input type="text" id="searchBox" class="form-control" placeholder="Search customers..." />
+    <button class="btn btn-primary" id="btnSearch">Search</button>
+    <a id="btnAdd"  class="btn btn-success ms-2">+ Add Customer</a>
+</div>
+
+<div id="customerContainer"></div>
+
+<div class="modal fade" id="customerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle"></h5>
+        <input type="button" class="btn-close" data-bs-dismiss="modal"></input>
+      </div>
+      <div class="modal-body" id="modalBody">
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+    function loadCustomers(page = 1) {
+        var search = $("#searchBox").val();
+        showLoader();
+        $.get("@Url.Action("LoadCustomers", "Customers")", { search: search, page: page }, function (html) {
+            $("#customerContainer").html(html);
+        }).always(hideLoader);
+    }
+
+    $(document).ready(function () {
+        loadCustomers();
+
+        $("#btnSearch").click(() => loadCustomers(1));
+        $("#searchBox").keypress(function (e) { if (e.which === 13) loadCustomers(1); });
+        $(document).on("click", ".page-link", function (e) { e.preventDefault(); loadCustomers($(this).data("page")); });
+
+        $("#btnAdd").click(function () {
+            $.get("@Url.Action("Create","Customers")", function (html) {
+                $("#modalTitle").text("Add Customer");
+                $("#modalBody").html(html);
+                $("#customerModal").modal("show");
+            });
+        });
+
+        $(document).on("click", ".btn-edit", function (e) {
+            e.preventDefault();
+            var url = $(this).attr("href");
+            $.get(url, function (html) {
+                $("#modalTitle").text("Edit Customer");
+                $("#modalBody").html(html);
+                $("#customerModal").modal("show");
+            });
+        });
+
+        $(document).on("submit", "#customerForm", function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var actionUrl = form.attr("action");
+
+            $.ajax({
+                url: actionUrl,
+                type: "POST",
+                data: form.serialize(),
+                success: function (result) {
+                    if (result.success) {
+                        $("#customerModal").modal("hide");
+                        loadCustomers(); 
+                    } else {
+                        $("#modalBody").html(result);
+                    }
+                }
+            });
+        });
+    });
+</script>
+}

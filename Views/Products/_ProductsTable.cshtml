@@ -1,0 +1,59 @@
+﻿@model OrderingSystem.ViewModel.ProductListViewModel
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th><th>Price</th><th>Stock Quantity</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    @if (Model.Products.Any())
+    {
+        foreach (var p in Model.Products)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.Price</td>
+                <td>@p.StockQty</td>
+                <td>
+                    <a href="@Url.Action("Edit","Products", new { id = p.Id })" class="btn btn-warning btn-sm btn-edit">Edit</a>
+                </td>
+            </tr>
+        }
+    }
+    else
+    {
+        <tr><td colspan="4">No products found.</td></tr>
+    }
+    </tbody>
+</table>
+
+<!-- Pagination + Info -->
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <strong>Total Records:</strong> @Model.TotalCount |
+        <strong>Total Pages:</strong> @Model.TotalPages
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            <!-- Prev -->
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a href="#" class="page-link" data-page="@(Model.Page - 1)">«</a>
+            </li>
+
+            <!-- Page Numbers -->
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a href="#" class="page-link" data-page="@i">@i</a>
+                </li>
+            }
+
+            <!-- Next -->
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a href="#" class="page-link" data-page="@(Model.Page + 1)">»</a>
+            </li>
+        </ul>
+    </nav>
+</div>

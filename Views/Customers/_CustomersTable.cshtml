@@ -1,0 +1,55 @@
+﻿@model OrderingSystem.ViewModel.CustomerListViewModel
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th><th>Email</th><th>Phone</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    @if (Model.Customers.Any())
+    {
+        foreach (var p in Model.Customers)
+        {
+            <tr>
+                <td>@p.Name</td>
+                <td>@p.Email</td>
+                <td>@p.Phone</td>
+                <td>
+                    <a href="@Url.Action("Edit","Customers", new { id = p.Id })" class="btn btn-warning btn-sm btn-edit">Edit</a>
+                </td>
+            </tr>
+        }
+    }
+    else
+    {
+        <tr><td colspan="4">No customers found.</td></tr>
+    }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <strong>Total Records:</strong> @Model.TotalCount |
+        <strong>Total Pages:</strong> @Model.TotalPages
+    </div>
+
+    <nav>
+        <ul class="pagination mb-0">
+            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                <a href="#" class="page-link" data-page="@(Model.Page - 1)">«</a>
+            </li>
+
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a href="#" class="page-link" data-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                <a href="#" class="page-link" data-page="@(Model.Page + 1)">»</a>
+            </li>
+        </ul>
+    </nav>
+</div>

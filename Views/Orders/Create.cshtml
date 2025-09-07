@@ -1,0 +1,108 @@
+@model OrderingSystem.ViewModel.OrderViewModel
+@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Create Order</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h2>Create Order</h2>
+        <div class="mb-2">
+            <label>Customer</label>
+            <select id="customer" class="form-select">
+            @foreach(var item in Model.Customers){
+                <option value="@item.Id">@item.Name</option>
+            }
+            </select>
+        </div>
+
+        <table class="table" id="items">
+            <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Line Total</th><th></th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button class="btn btn-sm btn-secondary" id="addItem">Add item</button>
+        <h4 class="mt-3">Total: <span id="total">0.00</span></h4>
+        <button class="btn btn-primary" id="save">Save Order</button>
+    </div>
+
+<script>
+function recalc(){
+    let total = 0;
+    $('#items tbody tr').each(function(){
+        const qty = parseInt($(this).find('.qty').val()||0);
+        const price = parseFloat($(this).find('.price').text()||0);
+        const line = qty * price;
+        $(this).find('.line').text(line.toFixed(2));
+        total += line;
+    });
+    $('#total').text(total.toFixed(2));
+}
+
+$('#addItem').click(function(){
+    const prodOptions = `@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(
+        string.Join("", Model.Products.Select(r=>$"<option value='{r.Id}'>{r.Name}</option>"))
+    ))`;
+    const row = $('<tr>'+
+        '<td><select class="form-select prod">'+prodOptions+'</select></td>'+
+        '<td class="price">0</td>'+
+        '<td><input type="number" class="form-control qty" value="1" min="1" /></td>'+
+        '<td class="line">0.00</td>'+
+        '<td><button class="btn btn-sm btn-danger remove">x</button></td>'+
+        '</tr>');
+    $('#items tbody').append(row);
+});
+
+$('#items').on('change', '.prod', function(){
+    const sel = $(this);
+    const id = sel.val();
+    const priceCell = sel.closest('tr').find('.price');
+    if(!id) return;
+    $.get('/Orders/GetPrice', { productId: id }, function(res){
+        if(res.success){
+            priceCell.text(res.price);
+            recalc();
+        } else alert('Price not found');
+    });
+});
+
+$('#items').on('input', '.qty', recalc);
+$('#items').on('click', '.remove', function(){ $(this).closest('tr').remove(); recalc(); });
+
+$('#save').click(function(){
+
+    const items = [];
+    $('#items tbody tr').each(function(){
+        const productId = parseInt($(this).find('.prod').val());
+        const qty = parseInt($(this).find('.qty').val());
+        const unitPrice = parseFloat($(this).find('.price').text());
+        if(productId) items.push({ productId, quantity: qty, unitPrice });
+    });
+
+    if(items.length===0)
+    { 
+        alert('Add items'); return; 
+    }
+
+    const payload = { customerId: parseInt($('#customer').val()), items };
+    $.ajax({
+        url: '/Orders/Create',
+        method: 'POST',
+        data: JSON.stringify(payload),
+        contentType: 'application/json',
+        success: function(res){ 
+            if(res.success) {
+                window.location = '/Orders/Details/' + res.orderId;
+            } 
+            else alert(res.error); 
+        }
+    });
+});
+</script>
+</body>
+</html>

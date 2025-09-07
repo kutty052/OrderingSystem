@@ -1,0 +1,86 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Products";
+}
+
+<h2>Products</h2>
+
+<div class="input-group mb-3">
+    <input type="text" id="searchBox" class="form-control" placeholder="Search products..." />
+    <button class="btn btn-primary" id="btnSearch">Search</button>
+    <a id="btnAdd"  class="btn btn-success ms-2">+ Add Product</a>
+</div>
+
+<div id="productsContainer"></div>
+
+<div class="modal fade" id="productModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- form will load here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+<script>
+    function loadProducts(page = 1) {
+        var search = $("#searchBox").val();
+        showLoader();
+        $.get("@Url.Action("LoadProducts", "Products")", { search: search, page: page }, function (html) {
+            $("#productsContainer").html(html);
+        }).always(hideLoader);
+    }
+
+    $(document).ready(function () {
+        loadProducts();
+
+        $("#btnSearch").click(() => loadProducts(1));
+        $("#searchBox").keypress(function (e) { if (e.which === 13) loadProducts(1); });
+        $(document).on("click", ".page-link", function (e) { e.preventDefault(); loadProducts($(this).data("page")); });
+
+        $("#btnAdd").click(function () {
+            $.get("@Url.Action("Create","Products")", function (html) {
+                $("#modalTitle").text("Add Product");
+                $("#modalBody").html(html);
+                $("#productModal").modal("show");
+            });
+        });
+
+        $(document).on("click", ".btn-edit", function (e) {
+            e.preventDefault();
+            var url = $(this).attr("href");
+            $.get(url, function (html) {
+                $("#modalTitle").text("Edit Product");
+                $("#modalBody").html(html);
+                $("#productModal").modal("show");
+            });
+        });
+
+        $(document).on("submit", "#productForm", function (e) {
+            e.preventDefault();
+            var form = $(this);
+            var actionUrl = form.attr("action");
+
+            $.ajax({
+                url: actionUrl,
+                type: "POST",
+                data: form.serialize(),
+                success: function (result) {
+                    if (result.success) {
+                        $("#productModal").modal("hide");
+                        loadProducts(); 
+                    } else {
+                        $("#modalBody").html(result);
+                    }
+                }
+            });
+        });
+    });
+</script>
+}

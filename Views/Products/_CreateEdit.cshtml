@@ -1,0 +1,23 @@
+﻿@model OrderingSystem.Models.Product
+
+<form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" asp-controller="Products" method="post" id="productForm">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Price" class="form-label"></label>
+        <input asp-for="Price" class="form-control" />
+        <span asp-validation-for="Price" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="StockQty" class="form-label"></label>
+        <input asp-for="StockQty" class="form-control" />
+        <span asp-validation-for="StockQty" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+</form>

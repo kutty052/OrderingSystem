@@ -1,0 +1,214 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Dashboard"; 
+}
+
+    <div class="container mt-4">
+        <h2>Sales Dashboard</h2>
+        <div class="filter mb-3">
+            <button class="btn btn-sm btn-outline-primary" id="btnToday">Today</button>
+            <button class="btn btn-sm btn-outline-primary" id="btnWeek">This Week</button>
+            <button class="btn btn-sm btn-outline-primary" id="btnMonth">This Month</button>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <input type="date" id="fromDate" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <input type="date" id="toDate" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <button id="btnFilter" class="btn btn-success w-100">Apply</button>
+            </div>
+        </div>
+
+        <div class="row text-center mb-4">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5>Total Orders</h5>
+                        <h3 id="totalOrders">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5>Total Sales</h5>
+                        <h3 id="totalSales">$0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h5>Avg Order Value</h5>
+                        <h3 id="avgOrderValue">$0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+        <div class="col-sm-12 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5>Sales by Day</h5>
+                <canvas id="salesBarChart" height="100"></canvas>
+            </div>
+        </div>
+        </div>
+        <div class="col-sm-12 col-lg-4">
+    <div class="card shadow">
+            <div class="card-body">
+                <h5>Sales Trend</h5>
+                <canvas id="salesLineChart" height="100"></canvas>
+            </div>
+        </div>
+        </div>
+        <div class="col-sm-12 col-lg-4">
+    <div class="card shadow">
+            <div class="card-body">
+                <h5>Top 5 Products</h5>
+                <canvas id="topProductsChart" height="100"></canvas>
+            </div>
+        </div>
+        </div>
+    </div>
+  </div>
+
+@section Scripts {
+    <script>
+
+        $(document).ready(function () {
+            showLoader();
+                var today = new Date().toISOString().split("T")[0];
+                $("#fromDate").val(today);
+                $("#toDate").val(today);
+
+                loadDashboard(today, today);
+
+                $("#btnToday").click(function () {
+                    var today = new Date().toISOString().split("T")[0];
+                    $("#fromDate").val(today);
+                    $("#toDate").val(today);
+                    loadDashboard(today, today);
+                    resetLink(this);
+                });
+
+                $("#btnWeek").click(function () {
+                    var today = new Date();
+                    var weekAgo = new Date();
+                    weekAgo.setDate(today.getDate() - 7);
+
+                    var from = weekAgo.toISOString().split("T")[0];
+                    var to = today.toISOString().split("T")[0];
+
+                    $("#fromDate").val(from);
+                    $("#toDate").val(to);
+                    loadDashboard(from, to);
+                    resetLink(this);
+                });
+
+                $("#btnMonth").click(function () {
+                    var today = new Date();
+                    var monthAgo = new Date();
+                    monthAgo.setMonth(today.getMonth() - 1);
+
+                    var from = monthAgo.toISOString().split("T")[0];
+                    var to = today.toISOString().split("T")[0];
+
+                    $("#fromDate").val(from);
+                    $("#toDate").val(to);
+                    loadDashboard(from, to);
+                    resetLink(this);
+                });
+
+                $("#btnFilter").click(function () {
+                    var from = $("#fromDate").val();
+                    var to = $("#toDate").val();
+                    if (from && to) {
+                        loadDashboard(from, to);
+                        $(".filter").find("button").removeClass("active");
+                    } else {
+                        alert("Please select both From and To dates.");
+                    }
+                });
+            });
+
+            function resetLink(ctrl){
+                $(".filter").find("button").removeClass("active");
+                $(ctrl).addClass("active");
+            }
+        var barChart, lineChart, pieChart;
+
+        function loadDashboard(from, to) {
+            $.getJSON("@Url.Action("Stats", "Dashboard")", { from: from, to: to }, function (data) {
+                
+                $("#totalOrders").text(data.totalOrders);
+                $("#totalSales").text("$" + data.totalSales.toFixed(2));
+                $("#avgOrderValue").text("$" + data.avgOrderValue.toFixed(2));
+
+                
+                var labels = data.salesByDay.map(x => x.day);
+                var values = data.salesByDay.map(x => x.sales);
+
+                if (barChart) barChart.destroy();
+                if (lineChart) lineChart.destroy();
+                if (pieChart) pieChart.destroy();
+
+                var ctxBar = document.getElementById('salesBarChart').getContext('2d');
+                barChart = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Sales by Day",
+                            data: values,
+                            backgroundColor: "rgba(54, 162, 235, 0.6)"
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+
+                var ctxLine = document.getElementById('salesLineChart').getContext('2d');
+                lineChart = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Sales Trend",
+                            data: values,
+                            fill: false,
+                            borderColor: "rgba(75, 192, 192, 1)",
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+
+                var prodLabels = data.topProducts.map(x => x.product);
+                var prodValues = data.topProducts.map(x => x.sales);
+
+                var ctxPie = document.getElementById('topProductsChart').getContext('2d');
+                pieChart = new Chart(ctxPie, {
+                    type: 'pie',
+                    data: {
+                        labels: prodLabels,
+                        datasets: [{
+                            data: prodValues,
+                            backgroundColor: [
+                                "rgba(255, 99, 132, 0.6)",
+                                "rgba(54, 162, 235, 0.6)",
+                                "rgba(255, 206, 86, 0.6)",
+                                "rgba(75, 192, 192, 0.6)",
+                                "rgba(153, 102, 255, 0.6)"
+                            ]
+                        }]
+                    },
+                    options: { responsive: true }
+                });
+            });
+        }
+    </script>
+}
