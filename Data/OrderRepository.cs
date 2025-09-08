@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using OrderingSystem.Controllers;
 using Microsoft.Data.SqlClient;
-using OrderingSystem.Controllers;
 using OrderingSystem.Models;
-using System.Security.Claims;
 
 namespace OrderingSystem.Data
 {
